@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/GiHccTpD/zapgorm2"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest/observer"
 	"gorm.io/gorm"
-	"moul.io/zapgorm2"
 )
 
 func Example() {
