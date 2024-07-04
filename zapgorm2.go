@@ -14,6 +14,8 @@ import (
 	gormlogger "gorm.io/gorm/logger"
 )
 
+const requestIDKey = "X-Request-ID"
+
 type ContextFn func(ctx context.Context) []zapcore.Field
 
 type Logger struct {
@@ -78,16 +80,21 @@ func (l Logger) Trace(ctx context.Context, begin time.Time, fc func() (string, i
 	}
 	elapsed := time.Since(begin)
 	logger := l.logger(ctx)
+
+	var requestIDValue any
+	if requestID := ctx.Value(requestIDKey); requestID != nil {
+		requestIDValue = requestID
+	}
 	switch {
 	case err != nil && l.LogLevel >= gormlogger.Error && (!l.IgnoreRecordNotFoundError || !errors.Is(err, gorm.ErrRecordNotFound)):
 		sql, rows := fc()
-		logger.Error("trace", zap.Error(err), zap.Duration("elapsed", elapsed), zap.Int64("rows", rows), zap.String("sql", sql))
+		logger.Error("trace", zap.Any(requestIDKey, requestIDValue), zap.Error(err), zap.Duration("elapsed", elapsed), zap.Int64("rows", rows), zap.String("sql", sql))
 	case l.SlowThreshold != 0 && elapsed > l.SlowThreshold && l.LogLevel >= gormlogger.Warn:
 		sql, rows := fc()
-		logger.Warn("trace", zap.Duration("elapsed", elapsed), zap.Int64("rows", rows), zap.String("sql", sql))
+		logger.Warn("trace", zap.Any(requestIDKey, requestIDValue), zap.Duration("elapsed", elapsed), zap.Int64("rows", rows), zap.String("sql", sql))
 	case l.LogLevel >= gormlogger.Info:
 		sql, rows := fc()
-		logger.Debug("trace", zap.Duration("elapsed", elapsed), zap.Int64("rows", rows), zap.String("sql", sql))
+		logger.Debug("trace", zap.Any(requestIDKey, requestIDValue), zap.Duration("elapsed", elapsed), zap.Int64("rows", rows), zap.String("sql", sql))
 	}
 }
 
